@@ -203,5 +203,6 @@ public __pl_AfterLife_SetNTVOptional()
 	MarkNativeAsOptional("AL_SetFlags");
 	MarkNativeAsOptional("AL_IsDebugEnabled");
 	MarkNativeAsOptional("AL_GetNeutralTeamNum");
+	MarkNativeAsOptional("Debug");
 }
 #endif
