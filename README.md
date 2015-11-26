@@ -17,3 +17,6 @@ Installation:
 3. Change or reload the map
 
 4. Test it and reply me.
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/naydef/afterlife-plugin/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
