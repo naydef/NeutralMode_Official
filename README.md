@@ -9,6 +9,7 @@ At least Sourcemod 1.6
 SDKHook installed
 
 Installation:
+
 1. Download the afterlife.smx and put it in the plugin folder of your Sourcemod install
 
 2. Download the afterlife.phrases.txt and put it in your translation folder of your Sourcemod install
