@@ -14,7 +14,7 @@
 	{
 	    "#format"	"{1:t}"
 	    "en"        "Toggle respawning in the neutral team. Enabled: {1}"
-		"bg"        "Промени предпочитаниятя за съживяване в неутралния отбор Включено:"
+		"bg"        "Промени предпочитанията за съживяване в неутралния отбор Включено:"
     }
 	"T_StartChoice"
 	{
@@ -74,7 +74,7 @@
 	}
 	"T_BlastKnockBack"
 	{
-	    "#format"  "{1:t}" //t
+	    "#format"  "{1:t}"
 	    "en"       "Take knockback from blast damage Enabled: {1}"
 		"bg"       "Поемайте отблъскващи удари Активирано: {1}"
 	}
@@ -82,5 +82,16 @@
 	{
 	    "en"       "Respawn me into the neutral team"
 		"bg"       "Съживи ме в неутралният отбор"
+	}
+	"T_AdV3"
+	{
+	    "en"       "To Change your neutral team preferences, write \x077FFF00!neutral\x01 in chat!"
+		"bg"       "За да промените вашите неутрални предпочитания, напишете \x077FFF00!neutral\x01 в чата!"
+	}
+	"T_GChange"
+	{
+	    "#format"  "{1:.1f} {2:.1f}"
+	    "en"       "Your Gravity Multiplier: {1} Server Multiplier: {1}"
+		"bg"       "Вашият умножител на гравитация: {1} Сървърен умножител: {2}"
 	}
 }

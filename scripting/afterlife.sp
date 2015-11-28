@@ -1,6 +1,6 @@
 /*
 			Welcome to the source code of the "[TF2] AfterLife" plugin.
-			Version: 0.9.1 Beta 1 | Private semi-gamemode plugin. | Stable
+			Version: 0.9.1 Beta 2 | Private semi-gamemode plugin. | Stable
 			Inspired from Ghost Mode Redux by ReFlexPoison, but without 
 			anything copied from his code.			
 			Minimum Requirements: Sourcemod >=1.6 , SDKHooks 2.1, TFWeapons include file
@@ -37,7 +37,7 @@
 #include <tfweapons2> //My own give weapon plugin
 #include <afterlife_plugin>
 
-#define PLUGIN_VERSION "0.9.1 Beta 1"
+#define PLUGIN_VERSION "0.9.1 Beta 2"
 #define PLUGIN_AUTHOR "Naydef"
 
 //Defines
@@ -490,11 +490,11 @@ public AfterLifeMenuHandler(Handle:menu, MenuAction:action, param1, param2)
 			}
 			if(PlayerEnabled[client])
 			{
-			    PrintToChat(client, "%s %t", SMTAG, "T_WillRespawn");
+				PrintToChat(client, "%s %t", SMTAG, "T_WillRespawn");
 			}
 			else
 			{
-			    PrintToChat(client, "%s %t", SMTAG, "T_NoRespawn");
+				PrintToChat(client, "%s %t", SMTAG, "T_NoRespawn");
 			}
 			PrintToChat(client, "%s %t", SMTAG, "T_InfoChange");
 			if(PreferencesMenu[client])
@@ -521,11 +521,11 @@ public AfterLifeMenuHandler(Handle:menu, MenuAction:action, param1, param2)
 			}
 			if(PlayerEnabled[client])
 			{
-			    PrintToChat(client, "%s %t", SMTAG, "T_WillRespawn");
+				PrintToChat(client, "%s %t", SMTAG, "T_WillRespawn");
 			}
 			else
 			{
-			    PrintToChat(client, "%s %t", SMTAG, "T_NoRespawn");
+				PrintToChat(client, "%s %t", SMTAG, "T_NoRespawn");
 			}
 			PrintToChat(client, "%s %t", SMTAG, "T_InfoChange");
 		}
@@ -738,11 +738,14 @@ public ExitButton(Handle:menu, MenuAction:action, client, selection)
 
 public GravitySettings(client)
 {
+	SetGlobalTransTarget(client);
+	new String:buffer[64];
 	new Handle:menu = CreateMenu(GravityHandler, MENU_ACTIONS_DEFAULT);
-	SetMenuTitle(menu, "Your Gravity Multiplier: %.1f Default Server Gravity Multiplier: %.1f", CGravity[client], float(GetConVarInt(DGravity))/800.0);
+	SetMenuTitle(menu, "%t", "T_GChange", CGravity[client], float(GetConVarInt(DGravity))/800.0);
 	AddMenuItem(menu, CHOICE1, "+0.1");
 	AddMenuItem(menu, CHOICE2, "-0.1");
-	AddMenuItem(menu, CHOICE3, "Back");
+	Format(buffer, sizeof(buffer), "%t", "Back");
+	AddMenuItem(menu, CHOICE3, buffer);
 	DisplayMenu(menu, client, 50);
 	return 0;
 }
@@ -771,7 +774,7 @@ public GravityHandler(Handle:menu, MenuAction:action, param1, param2)
 			}
 			else if(StrEqual(CHOICE2, info, false))
 			{
-				if(CGravity[client]<=0.1)
+				if(CGravity[client]<0.1)
 				{
 					PrintToChat(client, "%s %t", SMTAG, "T_NoNegGravity");
 					CGravity[client]=0.0;
@@ -1040,7 +1043,7 @@ public Action:Timer_Spawn(Handle:htimer, userid)
 		PrintToChat(client, "%s %t", SMTAG, "T_JustRespawned");
 		TeleportToSpawn(client, 0);
 		CreateTimer(0.1, Timer_CheckItems, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-		new String:buffer[64];
+		new String:buffer[128];
 		Format(buffer, sizeof(buffer), "%t", "T_JyourPref");
 		CreateTFStypeMessage(client, buffer);
 	}
@@ -1093,8 +1096,6 @@ public OnEntityCreated(entity, const String:classname[]) //Hook them even if the
 	}
 	else if(StrEqual(classname, "tf_ragdoll", false)) //It seems that tf_ragdoll doesn't fire the spawn hook. Maybe only on my own server
 	{
-		GetEntProp(entity, Prop_Send, "m_iTeam", GetRandomInt(2, 3));
-		SDKHook(entity, SDKHook_SpawnPost, Entity_SpawnPost);
 		RequestFrame(Frame_RagdollCheck, EntIndexToEntRef(entity));
 		return;
 	}
@@ -1125,10 +1126,7 @@ public Frame_RagdollCheck(ref) // Wow, i can change ragdoll properties here! Do 
 			if(InTeamN[i])
 			{
 				SetEntProp(i, Prop_Send, "m_hRagdoll", -1);
-				SetEntProp(entity, Prop_Send, "m_iTeam", GetRandomInt(2, 3));
-				SetEntProp(entity, Prop_Send, "m_bGib", 0);
-				//SetEntProp(entity, Prop_Send, "m_bGoldRagdoll", 1);
-				SetEntProp(entity, Prop_Send, "m_bElectrocuted", 1);
+				RemoveEdict(entity);
 			}
 		}
 	}
@@ -1282,7 +1280,7 @@ public Action:Timer_Announce(Handle:htimer) //To-do: More details and informatio
 	{
 		return Plugin_Stop;
 	}
-	switch(GetRandomInt(0, 5)) //Random
+	switch(GetRandomInt(0, 5))
 	{
 	case 1, 2:
 		{
@@ -1330,7 +1328,6 @@ public Action:Hook_Transmit(objs, entity) //CPU expensive processes!
 	}
 	if(!InTeamN[entity] && InTeamN[objs])
 	{
-		new particle=-1;
 		new item=-1;
 		while((item=FindEntityByClassname2(item, "tf_wea*"))!=-1) // 1. Scan every player item
 		{
@@ -1338,18 +1335,19 @@ public Action:Hook_Transmit(objs, entity) //CPU expensive processes!
 			{
 				if(GetEdictFlags(item) & FL_EDICT_ALWAYS)
 				{
-					SetEdictFlags(item, GetEdictFlags(item) ^ FL_EDICT_ALWAYS); //The flag is removed.
+					SetEdictFlags(item, GetEdictFlags(item) ^ FL_EDICT_ALWAYS);
 				}
 			}
 		}
+		
 		// Do you know: Particle systems have FL_EDICT_ALWAYS flag, which will make every entity parented to them visible
-		while((particle=FindEntityByClassname2(particle, "info_particle_system"))!=-1) // 2. Scan every particle with owner neutral player
+		while((item=FindEntityByClassname2(item, "info_particle_system"))!=-1) // 2. Scan every particle with owner neutral object
 		{
-			if(GetEntPropEnt(particle, Prop_Send, "m_hOwnerEntity")==objs)
+			if(GetEntPropEnt(item, Prop_Send, "moveparent")==objs)
 			{
-				if(GetEdictFlags(particle) & FL_EDICT_ALWAYS)
+				if(GetEdictFlags(item) & FL_EDICT_ALWAYS)
 				{
-					SetEdictFlags(particle, GetEdictFlags(particle) ^ FL_EDICT_ALWAYS); //The flag is removed.
+					SetEdictFlags(item, GetEdictFlags(item) ^ FL_EDICT_ALWAYS);
 				}
 			}
 		}
@@ -1543,7 +1541,7 @@ public Action:Timer_SetGravity(Handle:htimer, userid) //Something useful
 	}
 	else
 	{
-		ApplyGravityClient(client, float(GetConVarInt(DGravity)/800));
+		ApplyGravityClient(client, float(GetConVarInt(DGravity))/800.0);
 	}
 	return Plugin_Continue;
 }
@@ -1610,6 +1608,10 @@ bool:IsLegidToSpawn(client)
 	{
 		return false;
 	}
+	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") || !GetEntProp(client, Prop_Send, "m_iClass"))
+	{
+		return false;
+	}
 	if(RTimer[client]!=INVALID_HANDLE)
 	{
 		return false;
@@ -1630,23 +1632,12 @@ public Native_IsEnabled(Handle:plugin, numParams)
 
 public Native_IsPlayerEnabled(Handle:plugin, numParams)
 {
-	new client=GetNativeCell(1);
-	if(!IsValidClient(client))
-	{
-		return false;
-	}
-	return _:PlayerEnabled[client];
+	return _:PlayerEnabled[GetNativeCell(1)];
 }
 
 public Native_SetPlayerInNeutral(Handle:plugin, numParams)
 {
-	new client=GetNativeCell(1);
-	new bool:option=GetNativeCell(2);
-	if(!IsValidClient(client))
-	{
-		return -1;
-	}
-	PlayerEnabled[client]=option;
+	PlayerEnabled[GetNativeCell(1)]=GetNativeCell(2);
 	return 1;
 }
 
@@ -1657,12 +1648,7 @@ public Native_IsInNeutralTeam(Handle:plugin, numParams)
 
 public Native_GetGravityNeutral(Handle:plugin, numParams)
 {
-	new client=GetNativeCell(1);
-	if(!IsValidClient(client))
-	{
-		return -1;
-	}
-	return _:CGravity[client];
+	return _:CGravity[GetNativeCell(1)];
 }
 
 public Native_SetGravityNeutral(Handle:plugin, numParams)
@@ -1711,7 +1697,7 @@ bool:IsTF2() //My stock
 	}
 	else
 	{
-		SetFailState("[SM] This plugin is only for Team Fortress 2. Remove the plugin now!");
+		SetFailState("This plugin is only for Team Fortress 2. Remove the plugin now!");
 		return false;
 	}
 }
