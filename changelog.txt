@@ -1,0 +1,144 @@
+Team Fortress 2 plugin "AfterLife" changelog
+
+
+Welcome to the source code of the "[TF2] AfterLife" plugin.
+Version: 0.9.0 | Private semi-gamemode plugin. | Stable
+Inspired from Ghost Mode Redux by ReFlexPoison, but without 
+anything copied from his code.			
+Minimum Requirements: Sourcemod >=1.6 , SDKHooks 2.1, TFWeapons include file 
+Known bugs:
+Screwing team counts - Fixed
+Projectile explosion from team 2 at team 1 - Fixed
+Fix server crash, when player disconnects - Fixed
+Make bots from team 1 ignore team 2 and vice versa - Impossible for now
+Make sentries from both teams ignore players from both teams - Fixed
+Fix client crash due to changing team - Fixed
+Fix random crashes due to interfering plugins themselves - Stopped for now
+Fix double event issues - Fixed
+Fix the Neutral team cannot hurt themselves
+Improvements:
+Make it for regular players on the server - Ready
+On death, respawn the player in team 2 - Ready
+Improve the code - In beta stage
+New name - Ready
+Convert the syntax to Sourcemod 1.7=> - Far future
+Block sounds from team 2 to team 1 - Implemented
+Implement block death messages - Ready
+Implement API (Natives) - Ready
+Create SubPlugins - Implementing
+Translation Support - Next version
+
+Version Number | Status | Date | release
+___________________________________________
+
+
+Version 0.9.1 - Pre-Christmas update | Stable | 18 of December 2015
+-------------------------------------------
+1. Many, many bug fixes some of them written below:
+2. Now the plugin registers it's own library
+3. Gravity menu issues fixed
+4. Combined fix for the client crashes due to the ragdolls
+5. Moved some code
+6. Changed the only forward to include changeable client flags
+7. Fixed the looping sound from sappers (Maybe fixed)
+8. More tests for valid desired class to fully remove the possibility of living spectator bug.
+9. Shortened the code
+
+
+Version 0.9.0 | Stable | 21 of November 2015 | r7
+-------------------------------------------
+1. General code improvement and possible bug fixes
+2. Improvements in the launcher system of the plugin
+3. The plugin will load only on arena maps (Customizable with cvars)
+4. Fixed jarate conditions not removed
+5. Integrated anti-airblast subplugin into the main plugin
+6. Fixed blocking sounds from the neutral team not working. Now it works!
+7. Fixed sometimes players from the neutral team are visible
+8. Added new flags and cvars, also fixed many bugs and more!
+9. Fixed leaking handles with the menu
+10. Fixed bug when the player can't join a team, after the round ends
+11. Added TF2 style text in the plugin
+12. Added the Short Circuit as blacklisted weapon, AGAIN
+13. Now the plugin uses TFWeapons include file for easy weapon giving!
+14. Next version: Translation support!
+
+
+Version 0.5.2 | Unstable | 30 of September 2015 | r6
+-------------------------------------------
+MANY NEW FEATURES AND FIXES!!!
+1. Introduced the cookie system.
+2. Added automatic subplugin loading
+3. New version cvar
+4. Many new natives added
+5. Automatic subplugin loading(Like Freak Fortress 2)
+6. Added the flag system and natives to control it.
+7. Added a panel, where players can see description of the plugin
+8. Neutral Pyros cannot airblast real players!!(With the subplugin "AfterLife Anti-AirBlast")
+9. Some chat text are converted to PrintHintText
+10. Added new forward.
+11. Improvements
+12. Cleaning the code.
+13. Renaming some variables
+14. ATTENTION! This version is broken!
+
+
+Version 0.5.1 | Stable | Private Date | r5
+-------------------------------------------
+1. Fixed bug, which was introducted in the gravity menu from version 0.5.0
+2. Added sound hooks. From now the sounds from the neutral team will be blocked for the real teams.
+3. Fixed some tiny bugs.
+4. From the previous version: Full late-load compatibility
+5. Fixed an explot, which will make the neutral player visible and can deal damage to the real team.
+6. Fixed a very critical bug, associated with the ragdolls of the neutral team, crashing all clients which see the ragdoll.
+7. Added natives and subplugin system
+8. Added some new convars
+9. Coming soon: Cookie system
+10. Coming soon: Subplugins
+
+
+
+Version 0.5.0 | Stable | Private Date | r4
+-------------------------------------------
+1. Removed a small garbage code
+2. Jarate, Mad Milk and etc are blacklisted for now
+3. The plugin uses team check stock
+4. Possible exploit fixed
+5. Whitelisted the Short Circuit of the engineer
+6. Added player preferences menu.
+7. Fix a server crash due to no free edicts
+8. New control panel for clients.
+9. Code optimisation
+10. Added some new features, while the player is in the neutral team.
+11. Fixed critical bug, which allowed the players from the neutral team to damage real team sentries
+
+
+
+Version 0.4.7 | Stable | Private Date | r3
+-------------------------------------------
+1. Revert: From now the plugin uses SDKHook_TraceAttack
+2. Revert: Hide absolutely every entity which the owner is from the neutral team
+3. Fix particle entities which are not removed.
+4. Fixed a major problem with out of bounds errors in OnGameFrame
+5. The Short Circuit is not allowed and is replaced with Pistol for now
+6. From now, the plugin uses natives from the TFWeapons plugin
+7. Removed the "sm_" tag from the convars
+
+
+
+Version 0.4.6 | Stable | Private Date | r2
+--------------------------------------------
+1. Make the real team sentries to ignore the neutral team
+2. From now the plugin uses SDKHook_TraceAttack
+3. Set the correct collision group on buildings from the neutral team
+4. Hide absolutely every entity which the owner is from the neutral team
+5. Particle entities have maybe edict_always_transmit. OK. Fixed
+6. We are near to full stability
+
+
+
+Version 0.4.5 | Stable | Private Date | r1
+--------------------------------------------
+1. First release in the changelog
+2. Added menu after someone joins a team
+3. Fixed the "Living Spectator" bug
+4. Bug fixes

@@ -14,7 +14,7 @@
 	{
 	    "#format"	"{1:t}"
 	    "en"        "Toggle respawning in the neutral team. Enabled: {1}"
-		"bg"        "Промени предпочитанията за съживяване в неутралния отбор Включено:"
+		"bg"        "Промени предпочитанията за съживяване в неутралния отбор Включено: {1}"
     }
 	"T_StartChoice"
 	{
@@ -59,7 +59,7 @@
 	"T_NoNegGravity"
 	{
 	    "en"       "Sorry! You cannot set you gravity below zero."
-		"bg"       "Съжаляаме! Вие не можете да настройте вашата гравитация под нула."
+		"bg"       "Съжаляваме! Вие не можете да настройте вашата гравитация под нула."
 	}
 	"T_YouRespawn"
 	{
@@ -91,7 +91,7 @@
 	"T_GChange"
 	{
 	    "#format"  "{1:.1f} {2:.1f}"
-	    "en"       "Your Gravity Multiplier: {1} Server Multiplier: {1}"
+	    "en"       "Your Gravity Multiplier: {1} Server Multiplier: {2}"
 		"bg"       "Вашият умножител на гравитация: {1} Сървърен умножител: {2}"
 	}
 }

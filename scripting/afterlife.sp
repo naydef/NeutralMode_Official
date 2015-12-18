@@ -1,26 +1,26 @@
 /*
 			Welcome to the source code of the "[TF2] AfterLife" plugin.
-			Version: 0.9.1 Beta 2 | Private semi-gamemode plugin. | Stable
+			Version: 0.9.1 Final | Private semi-gamemode plugin. | Stable
 			Inspired from Ghost Mode Redux by ReFlexPoison, but without 
 			anything copied from his code.			
-			Minimum Requirements: Sourcemod >=1.6 , SDKHooks 2.1, TFWeapons include file
+			Minimum Requirements: Sourcemod >=1.6.0 , SDKHooks 2.1, TFWeapons include file
 			Known bugs:
 			Screwing team counts - Fixed
 			Projectile explosion from team 2 at team 1 - Fixed
-			Fix server crash, when player disconnects - Fixed
+			Fix server crash when player disconnects - Fixed
 			Make bots from team 1 ignore team 2 and vice versa - Impossible for now
 			Make sentries from both teams ignore players from both teams - Fixed
-			Fix client crash due to changing team - Fixed
-			Fix random crashes due to interfering plugins themselves - Stopped for now
+			Fix client crash due to changing teams - Fixed
+			Fix random crashes due to interfering plugins - Stopped for now
 			Fix double event issues - Fixed
-			Fix the Neutral team cannot hurt themselves
+			Fix the Neutral team cannot hurt themselves - Subplugin
 			Improvements:
 			Make it for regular players on the server - Ready
 			On death, respawn the player in team 2 - Ready
-			Improve the code - In beta stage
+			Improve the code - Ready
 			New name - Ready
 			Convert the syntax to Sourcemod 1.7=> - Far future
-			Block sounds from team 2 to team 1 - Implemented
+			Block sounds from team 2 to team 1 - Implemented (Need more testing)
 			Implement block death messages - Ready
 			Implement API (Natives) - Ready
 			Create SubPlugins - Implementing
@@ -31,18 +31,17 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>
-#include <tf2>
 #include <tf2_stocks>
 #include <clientprefs>
-#include <tfweapons2> //My own give weapon plugin
+#include <tfweapons2> //My own give weapon include
 #include <afterlife_plugin>
 
-#define PLUGIN_VERSION "0.9.1 Beta 2"
+#define PLUGIN_VERSION "0.9.1 Final"
 #define PLUGIN_AUTHOR "Naydef"
 
 //Defines
-#define VERYGRAVITY 9.0
-#define MAXENTITIES 2048
+#define VERYGRAVITY 10.0
+#define MAXENTITIES 2049
 #define NTEAM 0            // The Neutral team number.
 #define WSLOTS 6           // Max weapon slots
 
@@ -75,7 +74,7 @@ new Handle:RTimer[MAXPLAYERS];        // Fix respawn timer bypass exploit
 
 new bool:UserPluginEnabled;          // Control variable for cvar
 new bool:Enabled;                     // Variable for enabled plugin
-new bool:DebugEnabled;
+new bool:DebugEnabled;               // Debug message enabler cvar
 new bool:SpectatorCanSee;
 new bool:AllowNeutralTP;
 new bool:NoTriggerHurt;
@@ -86,7 +85,7 @@ new bool:SolidTP;
 new bool:BlockBlood;
 new bool:PlayerEnabled[MAXPLAYERS+1];
 new bool:TakeBlast[MAXPLAYERS+1];                    // Can they take blast force.
-new bool:PreferencesMenu[MAXPLAYERS+1];             // Is panel to back.
+new bool:PreferencesMenu[MAXPLAYERS+1];             // Is panel to back (I think this has to be removed somehow).
 new Float:CGravity[MAXPLAYERS+1];                    // Current gravity.
 new Float:AnnounceTime;
 new RespawnTime;                                     //This doesn't need to be a float number
@@ -106,7 +105,7 @@ public Plugin:myinfo =
 	author = PLUGIN_AUTHOR,
 	description = "Welcome to the Neutral team.",
 	version = PLUGIN_VERSION,
-	url = "http://ngeo.ftp.sh/development/"
+	url = "https://github.com/naydef/Afterlife-plugin"
 };
 
 public OnPluginStart()
@@ -114,7 +113,6 @@ public OnPluginStart()
 	LogMessage("AfterLife plugin loading!!!");
 	LoadTranslations("common.phrases");
 	LoadTranslations("afterlife.phrases");
-	IsTF2(); //My stock!
 	RegConsoleCmd("sm_neutral", Command_ScreenMenu, "Toggle the options menu to yourself.");
 	RegAdminCmd("al_status", Command_PlayerStatus, ADMFLAG_GENERIC, "Check the players"); //I need to know everything.
 	RegAdminCmd("al_toggle", Command_TogglePlayer, ADMFLAG_CHEATS, "Toggle respawning in the neutral team to someone");
@@ -170,21 +168,23 @@ public OnPluginStart()
 			{
 				LastTeam[i]=Arena_GetClientTeam(i);
 			}
+			if(AreClientCookiesCached(i))
+			{
+				OnClientCookiesCached(i);
+			}
 			ScreenMenuChoice(i, false);
 			OnClientPutInServer(i);
-		}
-	}
-	for(new i=1; i<=MaxClients; i++) //Also for cookies
-	{
-		if(AreClientCookiesCached(i))
-		{
-			OnClientCookiesCached(i);
 		}
 	}
 }
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
+	if(!IsTF2())
+	{
+		strcopy(error, err_max, "The plugin Afterlife is only for Team Fortress 2. Remove the plugin please!");
+		return APLRes_Failure;
+	}
 	CreateNative("AL_IsEnabled", Native_IsEnabled);
 	CreateNative("AL_IsPlayerEnabled", Native_IsPlayerEnabled);
 	CreateNative("AL_TogglePlayerInNeutralTeam", Native_SetPlayerInNeutral);
@@ -198,8 +198,10 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	CreateNative("AL_IsDebugEnabled", Native_IsDebugEnabled);
 	CreateNative("AL_GetNeutralTeamNum", Native_GetNeutralTeamNum);
 	
+	RegPluginLibrary("afterlife_plugin"); //Needed so other plugins can interact safely
+	
 	//Forwards
-	g_hNRespawn=CreateGlobalForward("AL_OnNeutralRespawn", ET_Event, Param_Cell, Param_Cell);
+	g_hNRespawn=CreateGlobalForward("AL_OnNeutralRespawn", ET_Event, Param_Cell, Param_Cell, Param_CellByRef);
 	return APLRes_Success;
 }
 
@@ -381,22 +383,14 @@ public DisableAL()
 
 public OnClientPutInServer(client)
 {
-	if(client<=0 || client>MaxClients) //Just to be sure!
-	{
-		return;
-	}
-	SDKHook(client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
+	SDKHook(client, SDKHook_OnTakeDamage, Hook_TakeDamage);
 	SDKHook(client, SDKHook_SetTransmit, Hook_Transmit);
 }
 
 public OnClientDisconnect(client)
 {
-	if(client<=0 || client>MaxClients) //Just to be sure!
-	{
-		return;
-	}
 	CacheCookieValues(client);
-	SDKUnhook(client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
+	SDKUnhook(client, SDKHook_OnTakeDamage, Hook_TakeDamage);
 	SDKUnhook(client, SDKHook_SetTransmit, Hook_Transmit);
 	InTeamN[client]=false;
 	PlayerEnabled[client]=false;
@@ -461,7 +455,7 @@ public ScreenMenuChoice(client, preferencesmenu)
 	AddMenuItem(menu, CHOICE2, buffer);
 	Format(buffer, sizeof(buffer), "%t", "No");
 	AddMenuItem(menu, CHOICE3, buffer);
-	DisplayMenu(menu, client, 30);
+	DisplayMenu(menu, client, 50);
 	return; 
 }
 
@@ -537,7 +531,7 @@ public Action:Command_PlayerStatus(client, args) //To-do: This will be removed i
 {
 	if(client==0)
 	{
-		PrintToServer("Major report.");
+		PrintToServer("Player Report:");
 		PrintToServer("Data about the players and their status.");
 		for(new i=0; i<=MaxClients; i++)
 		{
@@ -612,8 +606,8 @@ public Action:Command_TogglePlayer(client, args)
 	{
 		PlayerEnabled[target_list[i]]=enabled;
 	}
-	ReplyToCommand(client, "%s You have successfully toggled respawning of %s to %i", SMTAG, target_name, enabled);
-	ShowActivity2(client, "[AL] Toggled to %s to value %i", target_name, enabled);
+	ReplyToCommand(client, "%s You have successfully toggled respawning of %s to %i", SMTAG, target_name, enabled); // This is not finished!
+	ShowActivity2(client, "[AL] Toggled %s with value %i", target_name, enabled);
 	return Plugin_Handled;
 }
 
@@ -800,7 +794,7 @@ public GravityHandler(Handle:menu, MenuAction:action, param1, param2)
 
 CacheCookieValues(client)
 {
-	new String:value[25];
+	new String:value[10];
 	IntToString(TakeBlast[client], value, sizeof(value));
 	SetClientCookie(client, g_hCookieBlastSelf, value);
 	FloatToString(CGravity[client], value, sizeof(value));
@@ -812,7 +806,7 @@ CacheCookieValues(client)
 public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast) //Neutral team respawn system
 {
 	new deathplayer=GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!Enabled || GetRoundState()==2 || GetRoundState()==0)
+	if(!Enabled || !(GetRoundState()==1))
 	{
 		return Plugin_Continue;
 	}
@@ -849,9 +843,9 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 	{
 		LastTeam[client]=Arena_GetClientTeam(client);
 	}
-	if(InTeamN[client] && PluginSilence) //Force stop announcing to another plugins for respawned player (Freak Fortress 2 and VSH related)!
+	if(InTeamN[client]) //Force stop announcing to another plugins for respawned player (Freak Fortress 2 and VSH related)!
 	{
-		return Plugin_Stop;
+		return (PluginSilence) ? Plugin_Stop : Plugin_Handled; // Freak Fortress 2 and VSH will not detect airblasts any more!
 	}
 	return Plugin_Continue;
 }
@@ -866,12 +860,6 @@ public Action:Event_OnRoundStart(Handle:event, const String:name[], bool:dontBro
 	{
 		if(IsValidClient(i) && InTeamN[i])
 		{
-			new ragdoll=GetEntPropEnt(i, Prop_Send, "m_hRagdoll");
-			if(IsValidEntity(ragdoll))
-			{
-				RemoveEdict(ragdoll); // There is a reason to use RemoveEdict!
-				SetEntPropEnt(i, Prop_Send, "m_hRagdoll", -1);
-			}
 			CreateTimer(0.1, Timer_RoundReady, GetClientUserId(i), TIMER_FLAG_NO_MAPCHANGE);
 		}
 	}
@@ -904,17 +892,14 @@ public Action:Event_OnPostInvertory(Handle:event, const String:name[], bool:dont
 	if(InTeamN[client]) //Test for everything.
 	{
 		CreateTimer(0.1, Timer_CheckItems, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-		if(PluginSilence) // Force stop announcing to other plugins!
-		{
-			return Plugin_Stop;
-		}
+		return (PluginSilence) ? Plugin_Stop : Plugin_Handled; // Freak Fortress 2 and VSH will not detect airblasts any more!
 	}
 	return Plugin_Continue;
 }
 
 public Action:Event_ObjectSapped(Handle:event, const String:name[], bool:dontBroadcast) // Goodbye sappers!
 {
-	if(!Enabled || !GetRoundState())
+	if(!Enabled)
 	{
 		return Plugin_Continue;
 	}
@@ -922,18 +907,26 @@ public Action:Event_ObjectSapped(Handle:event, const String:name[], bool:dontBro
 	new client = GetClientOfUserId(GetEventInt(event, "ownerid"));
 	new spy = GetClientOfUserId(GetEventInt(event, "userid"));
 	new sapper = GetEventInt(event, "sapperid");
+	AL_Debug("SapperID: %i EntIndex: %i", sapper, EntRefToEntIndex(sapper));
 	
-	if(InTeamN[spy] && !InTeamN[client])
+	if(InTeamN[spy] || !InTeamN[client])
 	{
-		AcceptEntityInput(sapper, "Kill");
-		return Plugin_Handled;
-	}
-	else if(!InTeamN[spy] && InTeamN[client])
-	{
+		RequestFrame(Frame_RemoveSapper, EntIndexToEntRef(sapper));
+		AL_Debug("1. The sapper will be removed now!");
 		AcceptEntityInput(sapper, "Kill");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
+}
+
+public Frame_RemoveSapper(ref)
+{
+	new entity=EntRefToEntIndex(ref);
+	if(!IsValidEntity(entity))
+	{
+		return;
+	}
+	AcceptEntityInput(EntRefToEntIndex(ref), "Kill");
 }
 
 public Action:Event_OnObjectDeflected(Handle:event, const String:name[], bool:dontBroadcast)
@@ -965,11 +958,8 @@ public Action:Event_OnObjectDeflected(Handle:event, const String:name[], bool:do
 			{
 				KickClient(pusher, "You have been kicked for AIRBLASTING playing players!!!");
 			}
-		case 0:
-			{
-				return Plugin_Handled;
-			}
-		}	
+		}
+		return (PluginSilence) ? Plugin_Stop : Plugin_Handled; // Freak Fortress 2 and VSH will not detect airblasts any more!
 	}
 	return Plugin_Continue;
 }
@@ -1001,13 +991,13 @@ public OnGameFrame()
 public Action:Timer_Spawn(Handle:htimer, userid)
 {
 	new client=GetClientOfUserId(userid);
-	new Action:result;
-	
 	if(!Enabled || !IsValidClient(client) || IsPlayerAlive(client))
 	{
 		return Plugin_Stop;
 	}
 	
+	new Action:result;
+	new flags;
 	RTimer[client]=INVALID_HANDLE;
 	if(GetRoundState()==0 || GetRoundState()==2) //Deny them to respawn when the round ends or setup timer for while.
 	{
@@ -1025,19 +1015,25 @@ public Action:Timer_Spawn(Handle:htimer, userid)
 		ALFlags[client]=ALFLAGS_GENERAL;
 	}
 	
-	
+	flags=ALFlags[client];
 	Call_StartForward(g_hNRespawn);
 	Call_PushCell(client);
 	Call_PushCell(ALFlags[client] & ALFLAG_NDEAD);
+	Call_PushCellRef(flags);
 	Call_Finish(_:result);
 	if(result==Plugin_Handled || result==Plugin_Stop)
 	{
 		return result;
 	}
+	if(result==Plugin_Changed)
+	{
+		ALFlags[client]=flags;
+	}
 	
 	
 	if(PlayerEnabled[client])
 	{
+		SetGlobalTransTarget(client);
 		InTeamN[client]=true;
 		SetMeToOtherTeam(client);
 		PrintToChat(client, "%s %t", SMTAG, "T_JustRespawned");
@@ -1053,7 +1049,7 @@ public Action:Timer_Spawn(Handle:htimer, userid)
 public Action:Timer_CheckItems(Handle:htimer, userid) //Filtering weapons.
 {
 	new client=GetClientOfUserId(userid);
-	if(!IsValidClient(client) || !IsPlayerAlive(client))
+	if(!IsValidClient(client) || !IsPlayerAlive(client) || !Enabled)
 	{
 		return Plugin_Stop;
 	}
@@ -1122,23 +1118,12 @@ public Frame_RagdollCheck(ref) // Wow, i can change ragdoll properties here! Do 
 		}
 		if(GetEntPropEnt(i, Prop_Send, "m_hRagdoll")==entity)
 		{
-			Debug("Found matching ragdoll owner: %N in NTeamN: %i", i, InTeamN[i]);
 			if(InTeamN[i])
 			{
-				SetEntProp(i, Prop_Send, "m_hRagdoll", -1);
 				RemoveEdict(entity);
 			}
 		}
 	}
-	/*
-	if(GetEntProp(entity, Prop_Send, "m_iTeam")==NTEAM) //General functions
-	{
-		SetEntProp(entity, Prop_Send, "m_iTeam", GetRandomInt(2, 3));
-		SetEntProp(entity, Prop_Send, "m_bGib", 0);
-		SetEntProp(entity, Prop_Send, "m_bGoldRagdoll", 1);
-		//RemoveEdict(entity); //I will think on that!
-	}
-	*/
 }
 
 public Action:Entity_SpawnPost(entity)
@@ -1214,26 +1199,69 @@ public Action:Entity_SpawnPost(entity)
 			}
 			InTeamN[entity]=true;
 		}
-		SDKHook(entity, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
+		SDKHook(entity, SDKHook_OnTakeDamage, Hook_TakeDamage);
 	}
-	else if(StrContains(classname, "prop_", false)>-1) //I'm doing so bad things here just for compatibility with Building Hats plugin
+	else if(StrContains(classname, "prop_", false)>-1) //Compatibility with Building Hats plugin: https://forums.alliedmods.net/showthread.php?t=243705
 	{
 		RequestFrame(Frame_ProcessBHats, EntIndexToEntRef(entity));
 	}
-	/*
-	else if(StrEqual(classname, "tf_taunt_prop", false))
+	else if(StrEqual(classname, "tf_taunt_prop", false)) // Using heuristic way to find the owner of tauntprop
 	{
-		Debug("TauntProp: %i", entity);
-		Debug("InitTeamNum: %i TeamNum: %i", GetEntProp(entity, Prop_Data, "m_iInitialTeamNum"), GetEntProp(entity, Prop_Send, "m_iTeamNum"));
-		CreateTimer(0.1, Timer_Data, EntIndexToEntRef(entity), TIMER_FLAG_NO_MAPCHANGE);
-		if(NTEAM)
+		RequestFrame(Frame_HandleTauntProps, EntIndexToEntRef(entity));
+	}
+	return Plugin_Continue;
+}
+
+public Frame_HandleTauntProps(ref)
+{
+	new entity=EntRefToEntIndex(ref);
+	if(!IsValidEntity(entity))
+	{
+		return;
+	}
+	new Float:entityOrigin[3], Float:searchOrigin[3], Float:distance, Float:near, nearest;
+	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", entityOrigin);
+	for(new search=1; search<=MaxClients; search++) // 1. Find the nearest player
+	{
+		if(IsValidClient(search) && IsPlayerAlive(search))
 		{
-			SDKHook(entity, SDKHook_SetTransmit, Hook_Transmit);
-			InTeamN[entity]=true;
+			GetEntPropVector(search, Prop_Send, "m_vecOrigin", searchOrigin);
+			distance=GetVectorDistance(entityOrigin, searchOrigin);
+			AL_Debug("Client: %N Distance: %f", search, distance);
+			if(near==0.0)
+			{
+				near=distance;
+				nearest=search;
+			}
+			if(distance<near)
+			{
+				near=distance;
+				nearest=search;
+				AL_Debug("Found near player: %N", nearest);
+			}
 		}
 	}
-	*/
-	return Plugin_Continue;
+	AL_Debug("Found nearest player: %N", nearest);
+	// 2. Test if the player taunts
+	if(InTeamN[nearest] && TF2_IsPlayerInCondition(nearest, TFCond_Taunting))
+	{
+		AL_Debug("The player is in taunt condition: %N", nearest);
+		AL_Debug("Taunt index: %i", GetEntProp(nearest, Prop_Send, "m_iTauntItemDefIndex"));
+		switch (GetEntProp(nearest, Prop_Send, "m_iTauntItemDefIndex"))
+		{
+		case 30570, 1115: //Pool party - Pyro, Rancho Relaxo - Engineer
+			{
+				AL_Debug("Success. The plugin found the owner of the tauntprop: %N Flagging!", nearest);
+				if(ALFlags[nearest] & ALFLAG_INVISIBLE)
+				{
+					AL_Debug("Flagged entity for invisibility!");
+					SDKHook(entity, SDKHook_SetTransmit, Hook_Transmit);
+				}
+				InTeamN[entity]=true;
+				AL_Debug("Entity is registered!");
+			}
+		}
+	}
 }
 
 public Frame_ProcessBHats(ref)
@@ -1351,7 +1379,6 @@ public Action:Hook_Transmit(objs, entity) //CPU expensive processes!
 				}
 			}
 		}
-		
 		if(GetEdictFlags(objs) & FL_EDICT_ALWAYS)
 		{
 			SetEdictFlags(objs, GetEdictFlags(objs) ^ FL_EDICT_ALWAYS); //The flag is removed.
@@ -1360,47 +1387,42 @@ public Action:Hook_Transmit(objs, entity) //CPU expensive processes!
 		// Process with the logic!
 		if(IsValidClient(entity) && !IsPlayerAlive(entity) && InTeamN[objs])
 		{
-			if(SpectatorCanSee)
-			{
-				return Plugin_Continue;
-			}
-			else
-			{
-				return Plugin_Handled;
-			}
+			return (SpectatorCanSee) ? Plugin_Continue : Plugin_Handled;
 		}
 		
 		if(IsValidClient(objs))
 		{
-			if(ALFlags[objs] & ALFLAG_INVISIBLE)
-			{
-				return Plugin_Handled;
-			}
-			else
-			{
-				return Plugin_Continue;
-			}
+			return (ALFlags[objs] & ALFLAG_INVISIBLE) ? Plugin_Handled : Plugin_Continue;
 		}
 		return Plugin_Handled; //For every other entity!
-		
 	}
 	return Plugin_Continue;
 }
 
-public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
+public Action:Hook_TakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
 {
 	if(!Enabled)
 	{
 		return Plugin_Continue;
 	}
 	
-	if(InTeamN[victim] && NoTriggerHurt && !IsValidClient(attacker)) //"and can do anything they want!" sentence is a promise
+	if(InTeamN[victim] && !IsValidClient(attacker)  && !(ALFlags[victim] & ALFLAG_TAKEDMG)) //"and can do anything they want!" sentence is a promise
 	{
 		new String:classname[64];
 		GetEntityClassname(attacker, classname, sizeof(classname));
 		if(!attacker || StrEqual(classname, "trigger_hurt", false) || (StrContains(classname, "func_", false)>-1))
 		{
-			return Plugin_Handled;
+			if(NoTriggerHurt)
+			{
+				AL_Debug("Procedure 1 reached!");
+				return Plugin_Handled;
+			}
+			else
+			{
+				AL_Debug("Procedure 2 reached!");
+				damagetype|=DMG_REMOVENORAGDOLL;
+				return Plugin_Changed;
+			}
 		}
 	}
 	
@@ -1410,26 +1432,29 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 		{
 			if(damagetype & DMG_BLAST) // Give a chance for the soldiers, demomans and pyros. Or for everyone with a rocket launcher
 			{
-				//damagetype|=DMG_NEVERGIB;
-				ScaleVector(damageForce, 0.1); // Scale it
+				ScaleVector(damageForce, 0.1);
 				TeleportEntity(victim, NULL_VECTOR, NULL_VECTOR, damageForce); // I want to them to jump.
 				if(ALFlags[victim] & ALFLAG_TAKEDMG)
 				{
+					damagetype|=DMG_REMOVENORAGDOLL;
+					AL_Debug("Procedure 3 reached!");
 					return Plugin_Changed;
 				}
 				else
 				{
-					damage=0.0;
-					return Plugin_Changed; //return Plugin_Handled;
+					AL_Debug("Procedure 4 reached!");
+					return Plugin_Handled;
 				}
 			}
 		}
+		AL_Debug("Procedure 10 reached!");
 		return Plugin_Handled;
 	}
 	
 	if(InTeamN[victim] && InTeamN[attacker])
 	{
-		damagetype|=DMG_NEVERGIB;
+		AL_Debug("Procedure 5 reached!");
+		damagetype|=DMG_REMOVENORAGDOLL;
 		return Plugin_Changed;
 	}
 
@@ -1437,32 +1462,37 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	{
 		if(IsValidClient(victim) && IsValidClient(attacker) && InTeamN[attacker] && (ALFlags[attacker] & ALFLAG_DONTSTUN))
 		{
-			RequestFrame(Frame_RemoveStun, GetClientUserId(victim));
+			RequestFrame(Frame_FilterCondition, GetClientUserId(victim));
 		}
 		if(IsValidClient(victim) && !(ALFlags[victim] & ALFLAG_TAKEDMG) && InTeamN[victim])
 		{
+			AL_Debug("Procedure 6 reached!");
 			return Plugin_Handled;
 		}
 		else if(IsValidClient(victim) && InTeamN[victim])
 		{
-			return Plugin_Continue;
+			AL_Debug("Procedure 7 reached!");
+			damagetype|=DMG_REMOVENORAGDOLL;
+			return Plugin_Changed;
 		}
+		AL_Debug("Procedure 8 reached!");
 		return Plugin_Handled;
 	}
+	//PrintToServer("Procedure 9 reached!");
+	//LogMessage("Procedure 9 reached");
 	return Plugin_Continue;
 }
 
-public Frame_RemoveStun(userid) //Remove stun from taunts!
+public Frame_FilterCondition(userid)
 {
 	new client=GetClientOfUserId(userid);
 	if(!IsValidClient(client))
 	{
 		return;
 	}
-	if(TF2_IsPlayerInCondition(client, TFCond_Dazed))
-	{
-		TF2_RemoveCondition(client, TFCond_Dazed);
-	}
+	TF2_RemoveCondition(client, TFCond_Dazed);
+	TF2_RemoveCondition(client, TFCond_OnFire);
+	TF2_RemoveCondition(client, TFCond_Bleeding);
 }
 
 public Action:Hook_OnJarate(UserMsg:msg_id, Handle:bf, const players[], playersNum, bool:reliable, bool:init) //The code is from Freak Fortress 1.10.6
@@ -1499,7 +1529,7 @@ bool:SetMeToOtherTeam(client)
 	{
 		return false;
 	}
-	SetEntProp(client, Prop_Send, "m_lifeState", 2); 
+	SetEntProp(client, Prop_Send, "m_lifeState", 2);
 	ChangeClientTeam(client, NTEAM);
 	TF2_RespawnPlayer(client);
 	SetEntProp(client, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_DEBRIS_TRIGGER);               // Set their collision group to debris but triggers.
@@ -1559,9 +1589,23 @@ public Action:TF2_OnPlayerTeleport(client, teleporter, &bool:result)
 	if(AllowNeutralTP)
 	{
 		result=true;
+		if(!InTeamN[teleporter])
+		{
+			RequestFrame(Frame_SetFullChargeTP, EntIndexToEntRef(teleporter));
+		}
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
+}
+
+public Frame_SetFullChargeTP(ref)
+{
+	new entity=EntRefToEntIndex(ref);
+	if(!IsValidEntity(entity))
+	{
+		return;
+	}
+	SetEntPropFloat(entity, Prop_Send, "m_flRechargeTime", GetGameTime()+0.1);
 }
 
 #if SOURCEMOD_V_MAJOR==1 && SOURCEMOD_V_MINOR>=8
@@ -1580,6 +1624,7 @@ public Action:Hook_EntitySound(clients[64], &numClients, String:sound[PLATFORM_M
 		{
 			if(!InTeamN[clients[i]] && IsPlayerAlive(clients[i]))
 			{
+				//AL_Debug("Exception to client %N from entity %i File: %s", clients[i], entity, sound);
 				clients[i]=0; // Exception
 				return Plugin_Changed;
 			}
@@ -1600,23 +1645,15 @@ public Action:Hook_TempEntHook(const String:te_name[], const Players[], numClien
 
 bool:IsLegidToSpawn(client)
 {
-	if(!IsValidClient(client))
+	if(!Enabled || !IsValidClient(client) || InTeamN[client] || IsPlayerAlive(client))
 	{
 		return false;
 	}
-	if(InTeamN[client] || GetRoundState()!=1)
-	{
-		return false;
-	}
-	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass") || !GetEntProp(client, Prop_Send, "m_iClass"))
+	if(!GetEntProp(client, Prop_Send, "m_iDesiredPlayerClass"))
 	{
 		return false;
 	}
 	if(RTimer[client]!=INVALID_HANDLE)
-	{
-		return false;
-	}
-	if(IsPlayerAlive(client))
 	{
 		return false;
 	}
@@ -1691,15 +1728,7 @@ public Native_GetNeutralTeamNum(Handle:plugin, numParams)
 /*                                     Stocks                                    */
 bool:IsTF2() //My stock
 {
-	if(GetEngineVersion()==Engine_TF2)
-	{
-		return true;
-	}
-	else
-	{
-		SetFailState("This plugin is only for Team Fortress 2. Remove the plugin now!");
-		return false;
-	}
+	return (GetEngineVersion()==Engine_TF2) ? true : false;
 }
 
 TeleportToSpawn(iClient, iTeam = 0) //Chdata and VS SAXTON HALE 1.53
@@ -1710,7 +1739,7 @@ TeleportToSpawn(iClient, iTeam = 0) //Chdata and VS SAXTON HALE 1.53
 	new Handle:hArray = CreateArray();
 	while ((iEnt = FindEntityByClassname2(iEnt, "info_player_teamspawn")) != -1)
 	{
-		if (iTeam <= 1) // Not RED (2) nor BLu (3)
+		if (iTeam <= 1) // Not RED (2) nor BLU (3)
 		{
 			PushArrayCell(hArray, iEnt);
 		}
@@ -1731,7 +1760,7 @@ TeleportToSpawn(iClient, iTeam = 0) //Chdata and VS SAXTON HALE 1.53
 	TeleportEntity(iClient, vPos, vAng, NULL_VECTOR);
 }
 
-FindEntityByClassname2(startEnt, const  String:classname[]) //From VS SAXTON HALE
+FindEntityByClassname2(startEnt, const  String:classname[])
 {
 	/* If startEnt isn't valid shifting it back to the nearest valid one */
 	while (startEnt > -1 && !IsValidEntity(startEnt))
@@ -1771,18 +1800,18 @@ SetNoTarget(ent, bool:apply) //From Friendly Mode plugin
 	new flags;
 	if(apply)
 	{
-		flags = GetEntityFlags(ent)|FL_NOTARGET;
+		flags=GetEntityFlags(ent)|FL_NOTARGET;
 	}
 	else
 	{
-		flags = GetEntityFlags(ent)&~FL_NOTARGET;
+		flags=GetEntityFlags(ent)&~FL_NOTARGET;
 	}
 	SetEntityFlags(ent, flags);
 }
 
 Arena_GetClientTeam(entity) //Also works on entities!
 {
-	return GetEntProp(entity, Prop_Send, "m_iTeamNum");
+	return (IsValidEntity(entity)) ? GetEntProp(entity, Prop_Send, "m_iTeamNum") : -1;
 }
 
 
@@ -1794,7 +1823,7 @@ Float:ApplyGravityClient(client, Float:gravity)  //This value affects the predic
 	}
 	if(gravity==0.0)
 	{
-		SetEntityGravity(client, 0.000000000001); 
+		SetEntityGravity(client, 0.0000000000001); 
 	}
 	else
 	{
@@ -1808,6 +1837,7 @@ Float:ApplyGravityClient(client, Float:gravity)  //This value affects the predic
 	!GetRoundState == The round has not started
 	(GetRoundState==2) == When the round ended 
 	!(GetRoundState==2) == When the round is running or not started
+	!(GetRoundState==1) == The round is not running
 */
 
 GetRoundState()

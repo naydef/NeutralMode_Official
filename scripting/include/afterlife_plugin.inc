@@ -151,34 +151,35 @@ native AL_SetFlags(client, flags);
  *
  * @param client    The client who is respawning in the team
  * @param isAlready Is the player already in the neutral team?
- * @return			Plugin_Stop or Plugin_Handled to prevent changing the team and setting the collision groups of the player!
+ * @param flags     Contains default flags. You can change the flags here
+ * @return			Plugin_Stop or Plugin_Handled to stop respawning. Plugin_Changed for changing parameters
  */
-forward Action:AL_OnNeutralRespawn(client, isAlready);
+forward Action:AL_OnNeutralRespawn(client, isAlready, &flags);
 
 /**
  * Print and log debug information.
  *
- * @return 1-on success or 0 otherwise
+ * @return true on success or false otherwise
  *
  */
-stock Debug(const String:message[]="", any:...) //For debug.
+stock bool:AL_Debug(const String:message[]="", any:...) //For debug.
 {
 	if(AL_IsDebugEnabled())
 	{
-		decl String:text[512];
+		decl String:text[1024];
 		VFormat(text, sizeof(text), message, 2);
 		PrintToChatAll("%s %s", DEBUGTAG, text);
 		LogMessage("%s", text);
 		PrintToServer(text);
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-/*
+
 public SharedPlugin:__pl_AL_SetNTVOptional=
 {
-	name="[TF2] AfterLife",
+	name="afterlife_plugin",
 	file="afterlife.smx",
 	#if defined REQUIRE_PLUGIN
 		required=1,
@@ -186,7 +187,7 @@ public SharedPlugin:__pl_AL_SetNTVOptional=
 		required=0,
 	#endif
 };
-*/
+
 
 #if !defined REQUIRE_PLUGIN
 public __pl_AfterLife_SetNTVOptional()
