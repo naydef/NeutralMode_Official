@@ -52,7 +52,7 @@ stock bool:TFWeapons_Giveweapon(client, itemindex, String:classname[], level, qu
 	DispatchSpawn(weapon);
 	if(visible)
 	{
-		// Sorry, no one want more restrictions 
+		SetEntProp(weapon, Prop_Send, "m_bValidatedAttachedEntity", 1); // Magic! Make the weapon visible
 	}
 	EquipPlayerWeapon(client, weapon);
 	return true;

@@ -48,6 +48,7 @@ enum
 }
 
 
+
 /**
  * Is AfterLife Mod loaded?
  *
@@ -138,16 +139,19 @@ native AL_SetFlags(client, flags);
  native bool:AL_IsDebugEnabled();
  
  /**
- * Get the current defined neutral team number.
+ * Get the current defined neutral team number/enum.
  *
- * @return the team number
+ * @return the team number/enum
  *
  */
-  native AL_GetNeutralTeamNum();
+  native TFTeam:AL_GetNeutralTeamNum();
  
  /**
- * Called when a player is respawning in the neutral team.
+ * Called when a player is respawning into the neutral team.
  * Note: Here you can freely change flags of the player.
+ * The post hook is only called if the player will respawn.
+ * You can't change any value.
+ * For detection of respawning! 
  *
  * @param client    The client who is respawning in the team
  * @param isAlready Is the player already in the neutral team?
@@ -155,10 +159,12 @@ native AL_SetFlags(client, flags);
  * @return			Plugin_Stop or Plugin_Handled to stop respawning. Plugin_Changed for changing parameters
  */
 forward Action:AL_OnNeutralRespawn(client, isAlready, &flags);
+forward AL_OnNeutralRespawnPost(client, isAlready, flags);
 
 /**
  * Print and log debug information.
  *
+ * @param  message The message you want to send.
  * @return true on success or false otherwise
  *
  */

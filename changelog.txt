@@ -32,6 +32,33 @@ Version Number | Status | Date | release
 ___________________________________________
 
 
+Version 1.0.0 | Stable | 9 of January 2016
+-------------------------------------------
+
+1. Hopefully fixed server crashes due to this plugin
+2. All phrases in the plugin are now in the translation file.
+3. Fixed bugs with translations.
+4. Added new cvars
+5. Hopefully fixed sounds from neutral players and entities(buildings, etc) not blocked for real players (Disowned)
+6. Real team teleporters from now will not register neutral players, which have used the teleporters and fixed some bugs with instant recharging of the teleporters
+7. Fix for removed sappers still emitting looping sounds (Might not work)
+8. New forward
+9. And much more...
+
+
+Version 0.9.3 | Stable | unknown
+-------------------------------------------
+1. Tried to fix the server crashes
+2. Added debug warning advertisement messsage for developer version of the plugin
+3. Fixed some things, which I have forgotten to do before releasing the plugin
+
+
+Version 0.9.2 | Stable | unknown
+-------------------------------------------
+1. Tiny fixes
+2. Reformatted the code
+3. Published the plugin into the Sourcemod forum
+
 Version 0.9.1 - Pre-Christmas update | Stable | 18 of December 2015
 -------------------------------------------
 1. Many, many bug fixes some of them written below:
