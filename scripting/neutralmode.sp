@@ -116,7 +116,7 @@ public OnPluginStart()
 	cvarBlockBlood=CreateConVar("al_blockblood", "1", "1-No blood will be emitted by the neutral team | 0-Otherwise", _, true, 0.0, true, 1.0);
 	cvarGravMenu=CreateConVar("al_gravmenu", "1", "1-The gravity menu is enabled | 0-The menu is disabled", _, true, 0.0, true, 1.0);
 	cvarPopupMenu=CreateConVar("al_popupmenu", "1", "1-Menu for selection spawn preferences is enabled | 0-The menu is disabled", _, true, 0.0, true, 1.0);
-	cvarnoPickups=CreateConVar("al_nopickups", "0", "1-The players won't be able to pick up health/ammo packs and etc. | 0-The menu is disabled", _, true, 0.0, true, 1.0);
+	cvarnoPickups=CreateConVar("al_nopickups", "0", "1-The players won't be able to pick up health/ammo packs and etc. | 0-The player will be able to pick ammo/health", _, true, 0.0, true, 1.0);
 	HookConVarChange(cvarEnabled, CvarChange);
 	HookConVarChange(cvarDebug, CvarChange);
 	HookConVarChange(cvarAnnounceTime, CvarChange);
