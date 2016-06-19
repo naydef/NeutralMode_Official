@@ -30,11 +30,21 @@ Translation Support - Next version
 
 Version Number | Status | Date | release
 ___________________________________________
+Version 1.1.1 | Stable | 19 of June 2016
+-------------------------------------------
+1. Tried to fix sapper sounds again
+2. The code is improved
+3. Tried to make blood decals from the neutral team to be invisible(unsuccessfully)
+4. I will left this plugin for a long time!
+
+
+Version 1.1.0 | Stable | Unknown date
+-------------------------------------------
+1. Minor fixes (don't remember)
 
 
 Version 1.0.0 | Stable | 9 of January 2016
 -------------------------------------------
-
 1. Hopefully fixed server crashes due to this plugin
 2. All phrases in the plugin are now in the translation file.
 3. Fixed bugs with translations.
