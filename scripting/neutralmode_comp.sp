@@ -1,14 +1,25 @@
+/*
+	Plugin: [TF2] Afterlife: Friendly Fire
+	Subplugin | Version: 0.3.2
+	Description: Simply enables the ability, teammates from the neutral
+	team to hurt their teammates! Perfect!
+	New: Backstab detection
+
+*/
+#pragma semicolon 1
+
 #include <sourcemod>
-#include <afterlife_plugin>
+#include <tf2_stocks>
+#include <neutralteam_plugin>
 #include <freak_fortress_2>
 
-#define PLUGIN_VERSION "0.1"
+#define PLUGIN_VERSION "0.2"
 
 public Plugin:myinfo =
 {
 	name = "[TF2] Afterlife-Freak Fortress 2 Compatibility", 
 	author = "Naydef",
-	description = "Compatibility subplugin between this 2 plugins",
+	description = "Compatibility subplugin",
 	version = PLUGIN_VERSION,
 	url = "https://github.com/naydef/Afterlife-plugin"
 };

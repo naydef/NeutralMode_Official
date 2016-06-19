@@ -2,8 +2,8 @@
 {
 	"T_TPreferences"
 	{
-		"en"		"Preferences"
-		"bg"		"Предпочитания"
+		"en"		"Preferences\n"
+		"bg"		"Предпочитания\n"
 	}
 	"T_WThis"
 	{
@@ -12,8 +12,8 @@
 	}
 	"T_CRPreferences"
 	{
-	    "en"        "Toggle respawning in the neutral team. Enabled: "
-		"bg"        "Промени предпочитанията за съживяване в неутралния отбор Включено: "
+	    "en"        "Toggle respawning in the neutral team: "
+		"bg"        "Промени предпочитанията за съживяване в неутралния отбор: "
     }
 	"T_StartChoice"
 	{
@@ -73,13 +73,13 @@
 	}
 	"T_BlastKnockBack"
 	{
-	    "#format"  "{1:t}"
-	    "en"       "Take knockback from blast damage Enabled: {1}"
-		"bg"       "Поемайте отблъскващи удари Активирано: {1}"
+	    "#format"  "{1:s}"
+	    "en"       "Take knockback from blast damage: {1}"
+		"bg"       "Поемайте отблъскващи удари: {1}"
 	}
 	"T_RespawnMe"
 	{
-	    "en"       "Respawn me into the neutral team"
+	    "en"       "Respawn me in the neutral team"
 		"bg"       "Съживи ме в неутралният отбор"
 	}
 	"T_AdV3"
@@ -89,24 +89,18 @@
 	}
 	"T_GChange"
 	{
-	    "#format"  "{1:1f} {2:1f}"
+	    "#format"  "{1:.1f},{2:.1f}"
 	    "en"       "Your Gravity Multiplier: {1} Server Multiplier: {2}"
 		"bg"       "Вашият умножител на гравитация: {1} Сървърен умножител: {2}"
 	}
 	"T_NoGravMenu"
 	{
-	    "en"       "The gravity setting are disabled on this server!"
+	    "en"       "Gravity setting are disabled on this server!"
 		"bg"       "Гравитационните настройки са изключени на този сървър!"
 	}
-	"T_PlIntro"
-	{
-	    "#format"  "{1:s} {2:s}"
-	    "en"       "[TF2] Afterlife plugin\nVersion: {1} | Developed by {2}\n--------------------------------------------------\nAfterLife is a Team Fortress 2 mod, which puts the\ndead players in neutral team, where they respawn\nand can do anything they want! But they cannot hurt\nplaying team players. Also they are invisible for them.\nSubplugins can give further functionalities to the plugin\nOh, also you can RPS or High-Five the playing players\n"
-		"bg"       "[TF2] Afterlife plugin\nVersion: {1} | Developed by {2}\n--------------------------------------------------\nAfterLife is a Team Fortress 2 mod, which puts the\ndead players in neutral team, where they respawn\nand can do anything they want! But they cannot hurt\nplaying team players. Also they are invisible for them.\nSubplugins can give further functionalities to the plugin\nOh, also you can RPS or High-Five the playing players\n"
-	}    // I will translate it later
 	"T_NoSap"
 	{
-	    "en"       "Don't SAP playing players's buildings!!"
+	    "en"       "Dont SAP playing players buildings!!"
 		"bg"       "Недейте да повреждате съоръженията на играчите които играят!!"
 	}
 	"T_KickNoSap"
@@ -124,4 +118,15 @@
 	    "en"       "You have been kicked for AIRBLASTING playing players!!!"
 		"bg"       "Вие бяхте изгонен от сървъра за това че издухвате със въздушна струя играчите които играят!!!"
 	}
+	"T_YouAsked"
+	{
+	    "en"       "Are you asked every time you enter the server: "
+		"bg"       "Are you asked every time you enter the server: "
+	}
+	"T_PlIntro"
+	{
+	    "#format"  "{1:s},{2:s}"
+	    "en"       "[TF2] Neutral Team Mode plugin(Old name: Afterlife)\nVersion: {1} | Developed by {2}\n--------------------------------------------------\nNeutral Team Mode is a Team Fortress 2 mod, which puts the\ndead players in neutral team, where they respawn\nand can do anything they want! But they cannot hurt\nplaying team players. Also they are invisible for them.\nSubplugins can give further functionalities to the plugin\nOh, also you can RPS or High-Five the playing players\n"
+		"bg"       "[TF2] Neutral Team Mode plugin(Old name: Afterlife)\nVersion: {1} | Developed by {2}\n--------------------------------------------------\nNeutral Team Mode is a Team Fortress 2 mod, which puts the\ndead players in neutral team, where they respawn\nand can do anything they want! But they cannot hurt\nplaying team players. Also they are invisible for them.\nSubplugins can give further functionalities to the plugin\nOh, also you can RPS or High-Five the playing players\n"
+	}    // I will translate it later
 }

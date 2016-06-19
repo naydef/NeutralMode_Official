@@ -1,5 +1,4 @@
 # -TF2-Neutral Team Mode-plugin
-The plugin is renamed! The new name: Neutral Team Mode v1.1.0. The repository will be updated soon!
 
 When a player dies, he will be moved in a team and respawned, where the other "playing" players
  
